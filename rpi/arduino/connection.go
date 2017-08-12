@@ -3,6 +3,7 @@ package arduino
 import (
 	"github.com/tarm/serial"
 	"github.com/mgutz/logxi/v1"
+	"github.com/Lobaro/slip"
 )
 
 type S struct {
@@ -27,8 +28,11 @@ func NewConnection(name string, baud int) *S {
 	return s
 }
 
-func (s *S) WriteMessage(message string) {
-	_, err := s.port.Write([]byte(message))
+func (s *S) WriteMessage(message []byte) {
+	writer := slip.NewWriter(s.port)
+
+	err := writer.WritePacket(message)
+
 	if err != nil {
 		log.Fatal("Failed to write message to serial connection", err)
 	}
