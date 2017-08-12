@@ -1,4 +1,9 @@
+#include <OSCBundle.h>
+#include <OSCBoards.h>
 #include "FastLED.h"
+
+#include <SLIPEncodedSerial.h>
+SLIPEncodedSerial SLIPSerial(Serial);
 
 FASTLED_USING_NAMESPACE
 
@@ -37,7 +42,7 @@ void setup() {
   // set master brightness control
   FastLED.setBrightness(BRIGHTNESS);
 
-  Serial.begin(9600);
+  SLIPSerial.begin(9600);
 }
 
 
@@ -47,7 +52,7 @@ SimplePatternList gPatterns = { rainbow, rainbowWithGlitter, confetti, sinelon, 
 
 uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
-  
+
 void loop()
 {
   // Call the current pattern function once, updating the 'leds' array
@@ -61,21 +66,34 @@ void loop()
   // do some periodic updates
   EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
 //  EVERY_N_SECONDS( 10 ) { nextPattern(); } // change patterns periodically
-  if (Serial.available() > 0) {
-    incommingCommand = Serial.readString();
 
-    if (incommingCommand == "next") {
-      nextPattern();
+  OSCBundle bundleIN;
+  int size;
+
+  if (SLIPSerial.available()) {
+    while (!SLIPSerial.endofPacket()) {
+      size = SLIPSerial.available();
+      if (size > 0) {
+        while (size--) {
+          bundleIN.fill(SLIPSerial.read());
+        }
+      }
     }
+  }
+
+  if (!bundleIN.hasError()) {
+    bundleIN.dispatch("/next", nextPattern);
   }
 }
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
-void nextPattern()
+void nextPattern(OSCMessage &msg)
 {
-  // add one to the current pattern number, and wrap around at the end
-  gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE( gPatterns);
+  if (msg.isInt(0)) {
+    // add one to the current pattern number, and wrap around at the end
+    gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE( gPatterns);
+  }
 }
 
 void rainbow() 
