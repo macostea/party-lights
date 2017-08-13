@@ -7,7 +7,7 @@ import (
 	"context"
 )
 
-func SetupBTLE(nextPatternChannel chan<- string) {
+func SetupBTLE(nextPatternChannel chan<- []byte) {
 	d, err := dev.NewDevice("")
 	if err != nil {
 		log.Fatalf("Can't create new device: %s", err)
