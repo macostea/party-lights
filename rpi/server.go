@@ -14,6 +14,7 @@ func main() {
 	nextPatternChannel := make(chan string)
 	btle.SetupBTLE(nextPatternChannel)
 
+
 	for range nextPatternChannel {
 		log.Print("Switch to next pattern")
 
